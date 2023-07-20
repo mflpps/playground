@@ -3,14 +3,17 @@ import pandas as pd, base64, os, io
 from IPython.display import display, HTML
 from PIL import Image
 
+# define o diretório base
+base_dir = "C:/geracao-de-relatorio-html/"
+
 # define o diretório de imagens
-image_dir = "C:/geracao-de-relatorio-html/imagens/"
+image_dir = base_dir + "imagens/"
 
 # define o arquivo csv
-csv_filepath = "C:/geracao-de-relatorio-html/base-de-dados.csv"
+csv_filepath = base_dir + "base-de-dados.csv"
 
 # define o arquivo html de destino
-html_filepath = "C:/geracao-de-relatorio-html/relatorio.html"
+html_filepath = base_dir + "relatorio.html"
 
 # lista todos os arquivos de imagens dentro do diretório
 image_files = os.listdir(image_dir)
