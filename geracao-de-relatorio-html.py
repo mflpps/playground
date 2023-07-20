@@ -4,13 +4,13 @@ from IPython.display import display, HTML
 from PIL import Image
 
 # define o diretório de imagens
-image_dir = "C:/yo/local/py/geracao-de-relatorio-html/imagens/"
+image_dir = "C:/geracao-de-relatorio-html/imagens/"
 
 # define o arquivo csv
-csv_filepath = "C:/yo/local/py/geracao-de-relatorio-html/base-de-dados.csv"
+csv_filepath = "C:/geracao-de-relatorio-html/base-de-dados.csv"
 
 # define o arquivo html de destino
-html_filepath = "C:/yo/local/py/geracao-de-relatorio-html/relatorio.html"
+html_filepath = "C:/geracao-de-relatorio-html/relatorio.html"
 
 # lista todos os arquivos de imagens dentro do diretório
 image_files = os.listdir(image_dir)
