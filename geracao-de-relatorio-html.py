@@ -60,6 +60,6 @@ for index, row in merged_data.iterrows():
 # fecha a tabela adicionando a tag de fechamento
 html += '</table>'
 
-# save the HTML to a file
+# salva o html em um arquivo
 with open(html_filepath, "w") as f:
     f.write(html)
