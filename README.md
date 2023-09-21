@@ -1,2 +1,2 @@
-# playground
-repositório designado para reter meus mini-projetos
+# PLAYGROUND
+Este repositório é designado para reter meus mini-projetos.
