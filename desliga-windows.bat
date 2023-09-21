@@ -1,2 +1,2 @@
 @echo off
-python C:\yo\local\py\desliga-windows\desliga-windows.py
+python C:\desliga-windows.py
