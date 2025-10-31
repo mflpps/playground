@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Página não encontrada — Meu Perrengue</title>
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/custom.css" />
+
+  <style>
+    body.error-page {
+      background: #0e1214;
+      color: #e5e5e5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 4rem;
+      margin-bottom: 0.5rem;
+      color: #2ee4bb;
+    }
+
+    h2 {
+      color: #bfc9c9;
+	  font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: #bfc9c9;
+      max-width: 500px;
+      line-height: 1.6;
+      margin: 0 auto 1.5rem;
+    }
+
+    .actions .button {
+      margin: 0.5rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    footer a {
+      color: #2ee4bb;
+      text-decoration: none;
+    }
+
+    .button-report {
+      color: #ffffff !important;
+      border-color: #ffffff !important;
+    }
+  </style>
+</head>
+
+<body class="error-page">
+  <main>
+    <h1>404</h1>
+    <h2>Página não encontrada</h2>
+    <p>Parece que o endereço que você tentou acessar não existe. Volte à página inicial ou entre em contato se precisar de ajuda.</p>
+
+    <ul class="actions">
+      <li><a href="index.html" class="button primary">Voltar ao início</a></li>
+      <li><a href="mailto:canalmeuperrengue@gmail.com?subject=Erro%20404%20no%20site" class="button button-report">Reportar problema</a></li>
+    </ul>
+  </main>
+
+  <footer>
+    &copy; <span id="year"></span> Meu Perrengue. Template por: <a href="https://twitter.com/ajlkn" target="_blank" rel="noopener noreferrer">@ajlkn</a> / <a href="https://html5up.net" target="_blank" rel="noopener noreferrer">HTML5 UP</a></a>.
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
