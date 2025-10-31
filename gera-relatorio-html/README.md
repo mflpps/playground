@@ -1,7 +1,5 @@
-# PLAYGROUND
-Este repositório é designado para reter meus mini-projetos.
-
 ### Geração de relatório HTML
+
 Este mini-projeto se trata da automação de um trabalho muito oneroso de se fazer manualmente.
 
 Há uma base com várias imagens que devem ser cruzadas com os dados de uma planilha com informações adicionais.
