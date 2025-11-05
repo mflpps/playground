@@ -1,0 +1,243 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<title>CTE Lineage Viewer</title>
+<style>
+  html,body { height:100%; margin:0; font-family: Inter, Arial, sans-serif; }
+  #wrap { position:relative; height:100vh; }
+  #cy { position:absolute; inset:0; }
+  #overlay { position:absolute; inset:0; pointer-events:none; }
+  #legend { position:absolute; right:12px; top:12px; background:#fff; border:1px solid #ddd; padding:8px 10px; border-radius:8px; font-size:12px; }
+  .badge { display:inline-block; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:11px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="cy"></div>
+  <canvas id="overlay"></canvas>
+  <div id="legend">
+    Clique numa CTE para expandir/colapsar.<br/>
+    <span class="badge" style="background:#0074D9;color:#fff;">CTE</span>
+    <span class="badge" style="background:#2ECC40;color:#fff;">Coluna</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+<script>
+const DATA = {"cte_nodes": ["CTE_SOURCE", "CTE_GROUP", "CTE_SOURCE_2", "CTE_JOIN", "CTE_FILTER", "CTE_SOURCE_3", "CTE_JOIN_2", "FINAL_QUERY"], "edges_cte": [["CTE_SOURCE", "CTE_GROUP"], ["CTE_SOURCE_2", "CTE_JOIN"], ["CTE_GROUP", "CTE_JOIN"], ["CTE_JOIN", "CTE_FILTER"], ["CTE_FILTER", "CTE_JOIN_2"], ["CTE_SOURCE_3", "CTE_JOIN_2"], ["CTE_SOURCE_2", "FINAL_QUERY"], ["CTE_GROUP", "FINAL_QUERY"], ["CTE_JOIN", "FINAL_QUERY"], ["CTE_FILTER", "FINAL_QUERY"], ["CTE_SOURCE", "FINAL_QUERY"], ["CTE_SOURCE_3", "FINAL_QUERY"]], "columns_by_cte": {"CTE_SOURCE": ["COL1", "COL2", "COL3"], "CTE_GROUP": ["COL1", "SUM(COL2)", "MAX(COL3)"], "CTE_SOURCE_2": ["COL4", "COL5"], "CTE_JOIN": ["COL1", "COL2", "COL3", "COL5"], "CTE_FILTER": ["COL1", "COL2", "COL3", "COL5"], "CTE_SOURCE_3": ["*"], "CTE_JOIN_2": ["COL1", "COL2", "COL3", "COL5", "COL7"], "FINAL_QUERY": ["COL1", "COL2", "COL3", "COL4"]}, "col_links": [{"from": "CTE_SOURCE.COL1", "to": "CTE_GROUP.COL1"}, {"from": "CTE_SOURCE.COL2", "to": "CTE_GROUP.SUM(COL2)"}, {"from": "CTE_SOURCE.COL3", "to": "CTE_GROUP.MAX(COL3)"}, {"from": "CTE_GROUP.COL1", "to": "CTE_JOIN.COL1"}, {"from": "CTE_SOURCE_2.COL2", "to": "CTE_JOIN.COL2"}, {"from": "CTE_GROUP.COL2", "to": "CTE_JOIN.COL2"}, {"from": "CTE_SOURCE_2.COL3", "to": "CTE_JOIN.COL3"}, {"from": "CTE_GROUP.COL3", "to": "CTE_JOIN.COL3"}, {"from": "CTE_SOURCE_2.COL5", "to": "CTE_JOIN.COL5"}, {"from": "CTE_JOIN.COL1", "to": "CTE_FILTER.COL1"}, {"from": "CTE_JOIN.COL2", "to": "CTE_FILTER.COL2"}, {"from": "CTE_JOIN.COL3", "to": "CTE_FILTER.COL3"}, {"from": "CTE_JOIN.COL5", "to": "CTE_FILTER.COL5"}, {"from": "CTE_FILTER.COL1", "to": "CTE_JOIN_2.COL1"}, {"from": "CTE_FILTER.COL2", "to": "CTE_JOIN_2.COL2"}, {"from": "CTE_FILTER.COL3", "to": "CTE_JOIN_2.COL3"}, {"from": "CTE_FILTER.COL5", "to": "CTE_JOIN_2.COL5"}, {"from": "CTE_FILTER.COL7", "to": "CTE_JOIN_2.COL7"}, {"from": "CTE_SOURCE_3.COL7", "to": "CTE_JOIN_2.COL7"}, {"from": "CTE_GROUP.COL1", "to": "FINAL_QUERY.COL1"}, {"from": "CTE_JOIN.COL2", "to": "FINAL_QUERY.COL2"}, {"from": "CTE_JOIN.COL3", "to": "FINAL_QUERY.COL3"}, {"from": "CTE_SOURCE_2.COL4", "to": "FINAL_QUERY.COL4"}], "cte_json": [{"cte_name": "CTE_SOURCE", "cte_query": "SELECT\n  COL1,\n  COL2,\n  COL3\nFROM TABLE_A", "cte_column": [{"column_name": "COL1", "dependencies": []}, {"column_name": "COL2", "dependencies": []}, {"column_name": "COL3", "dependencies": []}]}, {"cte_name": "CTE_GROUP", "cte_query": "SELECT\n  COL1,\n  SUM(COL2),\n  MAX(COL3)\nFROM CTE_SOURCE", "cte_column": [{"column_name": "COL1", "dependencies": [{"cte_name": "CTE_SOURCE", "column_name": "COL1"}]}, {"column_name": "SUM(COL2)", "dependencies": [{"cte_name": "CTE_SOURCE", "column_name": "COL2"}]}, {"column_name": "MAX(COL3)", "dependencies": [{"cte_name": "CTE_SOURCE", "column_name": "COL3"}]}]}, {"cte_name": "CTE_SOURCE_2", "cte_query": "SELECT\n  COL4,\n  COL5\nFROM TABLE_B", "cte_column": [{"column_name": "COL4", "dependencies": []}, {"column_name": "COL5", "dependencies": []}]}, {"cte_name": "CTE_JOIN", "cte_query": "SELECT\n  COL1,\n  COL2,\n  COL3,\n  COL5\nFROM CTE_GROUP AS A\nINNER JOIN CTE_SOURCE_2 AS B\n  ON COL4 = COL1", "cte_column": [{"column_name": "COL1", "dependencies": [{"cte_name": "CTE_GROUP", "column_name": "COL1"}]}, {"column_name": "COL2", "dependencies": [{"cte_name": "CTE_SOURCE_2", "column_name": "COL2"}, {"cte_name": "CTE_GROUP", "column_name": "COL2"}]}, {"column_name": "COL3", "dependencies": [{"cte_name": "CTE_SOURCE_2", "column_name": "COL3"}, {"cte_name": "CTE_GROUP", "column_name": "COL3"}]}, {"column_name": "COL5", "dependencies": [{"cte_name": "CTE_SOURCE_2", "column_name": "COL5"}]}]}, {"cte_name": "CTE_FILTER", "cte_query": "SELECT\n  *\nFROM CTE_JOIN\nWHERE\n  COL5 >= 100", "cte_column": [{"column_name": "COL1", "dependencies": [{"cte_name": "CTE_JOIN", "column_name": "COL1"}]}, {"column_name": "COL2", "dependencies": [{"cte_name": "CTE_JOIN", "column_name": "COL2"}]}, {"column_name": "COL3", "dependencies": [{"cte_name": "CTE_JOIN", "column_name": "COL3"}]}, {"column_name": "COL5", "dependencies": [{"cte_name": "CTE_JOIN", "column_name": "COL5"}]}]}, {"cte_name": "CTE_SOURCE_3", "cte_query": "SELECT\n  *\nFROM TABLE_C", "cte_column": [{"column_name": "*", "dependencies": []}]}, {"cte_name": "CTE_JOIN_2", "cte_query": "SELECT\n  COL1,\n  COL2,\n  COL3,\n  COL5,\n  COL7\nFROM CTE_FILTER AS A\nLEFT JOIN CTE_SOURCE_3 AS B\n  ON COL6 = COL1", "cte_column": [{"column_name": "COL1", "dependencies": [{"cte_name": "CTE_FILTER", "column_name": "COL1"}]}, {"column_name": "COL2", "dependencies": [{"cte_name": "CTE_FILTER", "column_name": "COL2"}]}, {"column_name": "COL3", "dependencies": [{"cte_name": "CTE_FILTER", "column_name": "COL3"}]}, {"column_name": "COL5", "dependencies": [{"cte_name": "CTE_FILTER", "column_name": "COL5"}]}, {"column_name": "COL7", "dependencies": [{"cte_name": "CTE_FILTER", "column_name": "COL7"}, {"cte_name": "CTE_SOURCE_3", "column_name": "COL7"}]}]}, {"cte_name": "FINAL_QUERY", "cte_query": "WITH CTE_SOURCE AS (\n  SELECT\n    COL1,\n    COL2,\n    COL3\n  FROM TABLE_A\n), CTE_GROUP AS (\n  SELECT\n    COL1,\n    SUM(COL2),\n    MAX(COL3)\n  FROM CTE_SOURCE\n), CTE_SOURCE_2 AS (\n  SELECT\n    COL4,\n    COL5\n  FROM TABLE_B\n), CTE_JOIN AS (\n  SELECT\n    COL1,\n    COL2,\n    COL3,\n    COL5\n  FROM CTE_GROUP AS A\n  INNER JOIN CTE_SOURCE_2 AS B\n    ON COL4 = COL1\n), CTE_FILTER AS (\n  SELECT\n    *\n  FROM CTE_JOIN\n  WHERE\n    COL5 >= 100\n), CTE_SOURCE_3 AS (\n  SELECT\n    *\n  FROM TABLE_C\n), CTE_JOIN_2 AS (\n  SELECT\n    COL1,\n    COL2,\n    COL3,\n    COL5,\n    COL7\n  FROM CTE_FILTER AS A\n  LEFT JOIN CTE_SOURCE_3 AS B\n    ON COL6 = COL1\n)\nSELECT\n  COL1,\n  COL2,\n  COL3,\n  COL4\nFROM CTE_FILTER", "cte_column": [{"column_name": "COL1", "dependencies": [{"cte_name": "CTE_GROUP", "column_name": "COL1"}]}, {"column_name": "COL2", "dependencies": [{"cte_name": "CTE_JOIN", "column_name": "COL2"}]}, {"column_name": "COL3", "dependencies": [{"cte_name": "CTE_JOIN", "column_name": "COL3"}]}, {"column_name": "COL4", "dependencies": [{"cte_name": "CTE_SOURCE_2", "column_name": "COL4"}]}]}]};
+
+// nós CTE
+const elements = [];
+for (const id of DATA.cte_nodes) {
+  elements.push({ data: { id, label: id, type: 'cte' } });
+}
+// arestas CTE→CTE
+for (const [s,t] of DATA.edges_cte) {
+  elements.push({ data: { id: s+"->"+t, source: s, target: t, type: 'cte_edge' } });
+}
+
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements,
+  style: [
+    { selector: 'node[type="cte"]', style: {
+      'label': 'data(label)',
+      'background-color': '#0074D9',
+      'color': '#fff',
+      'shape': 'round-rectangle',
+      'text-valign': 'top',
+      'text-halign': 'center',
+      'width': 240,
+      'height': 64,
+      'padding': '12px',
+      'font-size': 12
+    } },
+    { selector: 'edge[type="cte_edge"]', style: {
+      'curve-style': 'taxi',
+      'taxi-direction': 'auto',
+      'line-color': '#B0B0B0',
+      'target-arrow-color': '#B0B0B0',
+      'target-arrow-shape': 'triangle',
+      'width': 1.8,
+      'opacity': 1.0
+    } }
+  ],
+  layout: { name: 'breadthfirst', directed: true, padding: 40, spacingFactor: 1.4 },
+  wheelSensitivity: 0.2
+});
+
+// Estado de expansão
+const expanded = Object.create(null);
+
+// Canvas overlay
+const canvas = document.getElementById('overlay');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){
+  const bb = cy.container().getBoundingClientRect();
+  canvas.width = Math.max(1, bb.width);
+  canvas.height = Math.max(1, bb.height);
+}
+resizeCanvas();
+window.addEventListener('resize', ()=>{ resizeCanvas(); drawOverlay(); });
+
+// Geometria das "tabelas"
+const ROW_H = 18;
+const HEADER_H = 22;
+const PADDING = 10;
+const COL_MARGIN_X = 6;
+
+// coordenadas auxiliares em pixel (rendered)
+function nodeBox(n){
+  const pos = n.renderedPosition();
+  const w = n.renderedWidth();
+  const h = n.renderedHeight();
+  return {
+    left: pos.x - w/2,
+    right: pos.x + w/2,
+    top: pos.y - h/2,
+    bottom: pos.y + h/2,
+    width: w,
+    height: h
+  };
+}
+
+function drawTable(n){
+  const id = n.id();
+  const cols = DATA.columns_by_cte[id] || [];
+  // base node box
+  const box = nodeBox(n);
+  // altura expandida
+  const tableH = HEADER_H + cols.length * ROW_H + PADDING*2;
+  const expandTop = box.top; // “cresce” para baixo
+  const expandLeft = box.left;
+  const width = box.width;
+
+  // fundo
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillRect(expandLeft, expandTop, width, tableH);
+
+  // borda
+  ctx.strokeStyle = '#004a89';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(expandLeft+0.5, expandTop+0.5, width-1, tableH-1);
+
+  // header
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(expandLeft, expandTop, width, HEADER_H);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '12px Arial';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(id, expandLeft + 8, expandTop + HEADER_H/2);
+
+  // linhas de colunas
+  ctx.font = '11px Arial';
+  ctx.textBaseline = 'middle';
+  cols.forEach((c, i) => {
+    const y = expandTop + HEADER_H + PADDING + i*ROW_H + ROW_H/2;
+    // célula
+    ctx.fillStyle = '#2ECC40';
+    ctx.fillRect(expandLeft + COL_MARGIN_X, y-11, width - COL_MARGIN_X*2, 16);
+    ctx.fillStyle = '#FFFFFF';
+    const label = String(c).slice(0, 80);
+    ctx.fillText(label, expandLeft + COL_MARGIN_X + 6, y);
+  });
+}
+
+function colAnchor(n, colName, side){ // side: 'left' | 'right'
+  const id = n.id();
+  const cols = DATA.columns_by_cte[id] || [];
+  const idx = cols.indexOf(colName);
+  if (idx < 0) return null;
+  const box = nodeBox(n);
+  const y = box.top + HEADER_H + PADDING + idx*ROW_H + ROW_H/2;
+  const x = side === 'right' ? box.right - 4 : box.left + 4;
+  return {x, y};
+}
+
+function drawLinks(){
+  // cte→cte opacidade
+  cy.edges('[type="cte_edge"]').forEach(e => {
+    const s = e.source().id(), t = e.target().id();
+    const both = !!(expanded[s] && expanded[t]);
+    e.style('opacity', both ? 0.18 : 1.0);
+  });
+
+  // coluna→coluna
+  ctx.lineWidth = 1.5;
+  DATA.col_links.forEach(link => {
+    const [sCte, sCol] = link.from.split('.');
+    const [tCte, tCol] = link.to.split('.');
+    const sNode = cy.getElementById(sCte);
+    const tNode = cy.getElementById(tCte);
+    if (!sNode || !tNode || !sNode.renderedPosition || !tNode.renderedPosition) return;
+
+    const sExpanded = !!expanded[sCte];
+    const tExpanded = !!expanded[tCte];
+
+    if (sExpanded && tExpanded){
+      const a1 = colAnchor(sNode, sCol, 'right');
+      const a2 = colAnchor(tNode, tCol, 'left');
+      if (!a1 || !a2) return;
+      ctx.strokeStyle = '#FFD166';
+      ctx.beginPath();
+      ctx.moveTo(a1.x, a1.y);
+      // curva suave
+      const midx = (a1.x + a2.x)/2;
+      ctx.bezierCurveTo(midx, a1.y, midx, a2.y, a2.x, a2.y);
+      ctx.stroke();
+    } else if (sExpanded && !tExpanded){
+      // coluna → caixa destino
+      const a1 = colAnchor(sNode, sCol, 'right');
+      if (!a1) return;
+      const tBox = nodeBox(tNode);
+      const a2 = { x: tBox.left + 4, y: tBox.top + tBox.height/2 };
+      ctx.strokeStyle = '#B5E48C';
+      ctx.beginPath();
+      ctx.moveTo(a1.x, a1.y);
+      const midx = (a1.x + a2.x)/2;
+      ctx.bezierCurveTo(midx, a1.y, midx, a2.y, a2.x, a2.y);
+      ctx.stroke();
+    } else if (!sExpanded && tExpanded){
+      // caixa origem → coluna destino
+      const sBox = nodeBox(sNode);
+      const a1 = { x: sBox.right - 4, y: sBox.top + sBox.height/2 };
+      const a2 = colAnchor(tNode, tCol, 'left');
+      if (!a2) return;
+      ctx.strokeStyle = '#B5E48C';
+      ctx.beginPath();
+      ctx.moveTo(a1.x, a1.y);
+      const midx = (a1.x + a2.x)/2;
+      ctx.bezierCurveTo(midx, a1.y, midx, a2.y, a2.x, a2.y);
+      ctx.stroke();
+    } else {
+      // ambas colapsadas → deixamos somente CTE→CTE padrão (já desenhado pelo Cytoscape)
+    }
+  });
+
+function drawOverlay(){
+  const bb = cy.container().getBoundingClientRect();
+  ctx.clearRect(0,0,bb.width,bb.height);
+
+  // desenha tabelas expandidas
+  cy.nodes('[type="cte"]').forEach(n => {
+    if (expanded[n.id()]) drawTable(n);
+  });
+
+  // desenha links coluna→coluna (e ajusta opacidade das CTE→CTE)
+  drawLinks();
+}
+
+// Redesenhar quando a cena muda
+["render","pan","zoom","dragfree","position"].forEach(ev => cy.on(ev, drawOverlay));
+cy.on('resize', ()=>{ resizeCanvas(); drawOverlay(); });
+
+// Toggle expand/collapse
+cy.on('tap', 'node[type="cte"]', evt => {
+  const id = evt.target.id();
+  expanded[id] = !expanded[id];
+  drawOverlay();
+});
+
+// Primeira pintura
+drawOverlay();
+</script>
+</body></html>

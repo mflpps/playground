@@ -1,0 +1,266 @@
+[
+  {
+    "cte_name": "CTE_SOURCE",
+    "cte_query": "SELECT\n  COL1,\n  COL2,\n  COL3\nFROM TABLE_A",
+    "cte_column": [
+      {
+        "column_name": "COL1",
+        "dependencies": []
+      },
+      {
+        "column_name": "COL2",
+        "dependencies": []
+      },
+      {
+        "column_name": "COL3",
+        "dependencies": []
+      }
+    ]
+  },
+  {
+    "cte_name": "CTE_GROUP",
+    "cte_query": "SELECT\n  COL1,\n  SUM(COL2),\n  MAX(COL3)\nFROM CTE_SOURCE",
+    "cte_column": [
+      {
+        "column_name": "COL1",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE",
+            "column_name": "COL1"
+          }
+        ]
+      },
+      {
+        "column_name": "SUM(COL2)",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE",
+            "column_name": "COL2"
+          }
+        ]
+      },
+      {
+        "column_name": "MAX(COL3)",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE",
+            "column_name": "COL3"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "cte_name": "CTE_SOURCE_2",
+    "cte_query": "SELECT\n  COL4,\n  COL5\nFROM TABLE_B",
+    "cte_column": [
+      {
+        "column_name": "COL4",
+        "dependencies": []
+      },
+      {
+        "column_name": "COL5",
+        "dependencies": []
+      }
+    ]
+  },
+  {
+    "cte_name": "CTE_JOIN",
+    "cte_query": "SELECT\n  COL1,\n  COL2,\n  COL3,\n  COL5\nFROM CTE_GROUP AS A\nINNER JOIN CTE_SOURCE_2 AS B\n  ON COL4 = COL1",
+    "cte_column": [
+      {
+        "column_name": "COL1",
+        "dependencies": [
+          {
+            "cte_name": "CTE_GROUP",
+            "column_name": "COL1"
+          }
+        ]
+      },
+      {
+        "column_name": "COL2",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE_2",
+            "column_name": "COL2"
+          },
+          {
+            "cte_name": "CTE_GROUP",
+            "column_name": "COL2"
+          }
+        ]
+      },
+      {
+        "column_name": "COL3",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE_2",
+            "column_name": "COL3"
+          },
+          {
+            "cte_name": "CTE_GROUP",
+            "column_name": "COL3"
+          }
+        ]
+      },
+      {
+        "column_name": "COL5",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE_2",
+            "column_name": "COL5"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "cte_name": "CTE_FILTER",
+    "cte_query": "SELECT\n  *\nFROM CTE_JOIN\nWHERE\n  COL5 >= 100",
+    "cte_column": [
+      {
+        "column_name": "COL1",
+        "dependencies": [
+          {
+            "cte_name": "CTE_JOIN",
+            "column_name": "COL1"
+          }
+        ]
+      },
+      {
+        "column_name": "COL2",
+        "dependencies": [
+          {
+            "cte_name": "CTE_JOIN",
+            "column_name": "COL2"
+          }
+        ]
+      },
+      {
+        "column_name": "COL3",
+        "dependencies": [
+          {
+            "cte_name": "CTE_JOIN",
+            "column_name": "COL3"
+          }
+        ]
+      },
+      {
+        "column_name": "COL5",
+        "dependencies": [
+          {
+            "cte_name": "CTE_JOIN",
+            "column_name": "COL5"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "cte_name": "CTE_SOURCE_3",
+    "cte_query": "SELECT\n  *\nFROM TABLE_C",
+    "cte_column": [
+      {
+        "column_name": "*",
+        "dependencies": []
+      }
+    ]
+  },
+  {
+    "cte_name": "CTE_JOIN_2",
+    "cte_query": "SELECT\n  COL1,\n  COL2,\n  COL3,\n  COL5,\n  COL7\nFROM CTE_FILTER AS A\nLEFT JOIN CTE_SOURCE_3 AS B\n  ON COL6 = COL1",
+    "cte_column": [
+      {
+        "column_name": "COL1",
+        "dependencies": [
+          {
+            "cte_name": "CTE_FILTER",
+            "column_name": "COL1"
+          }
+        ]
+      },
+      {
+        "column_name": "COL2",
+        "dependencies": [
+          {
+            "cte_name": "CTE_FILTER",
+            "column_name": "COL2"
+          }
+        ]
+      },
+      {
+        "column_name": "COL3",
+        "dependencies": [
+          {
+            "cte_name": "CTE_FILTER",
+            "column_name": "COL3"
+          }
+        ]
+      },
+      {
+        "column_name": "COL5",
+        "dependencies": [
+          {
+            "cte_name": "CTE_FILTER",
+            "column_name": "COL5"
+          }
+        ]
+      },
+      {
+        "column_name": "COL7",
+        "dependencies": [
+          {
+            "cte_name": "CTE_FILTER",
+            "column_name": "COL7"
+          },
+          {
+            "cte_name": "CTE_SOURCE_3",
+            "column_name": "COL7"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "cte_name": "FINAL_QUERY",
+    "cte_query": "WITH CTE_SOURCE AS (\n  SELECT\n    COL1,\n    COL2,\n    COL3\n  FROM TABLE_A\n), CTE_GROUP AS (\n  SELECT\n    COL1,\n    SUM(COL2),\n    MAX(COL3)\n  FROM CTE_SOURCE\n), CTE_SOURCE_2 AS (\n  SELECT\n    COL4,\n    COL5\n  FROM TABLE_B\n), CTE_JOIN AS (\n  SELECT\n    COL1,\n    COL2,\n    COL3,\n    COL5\n  FROM CTE_GROUP AS A\n  INNER JOIN CTE_SOURCE_2 AS B\n    ON COL4 = COL1\n), CTE_FILTER AS (\n  SELECT\n    *\n  FROM CTE_JOIN\n  WHERE\n    COL5 >= 100\n), CTE_SOURCE_3 AS (\n  SELECT\n    *\n  FROM TABLE_C\n), CTE_JOIN_2 AS (\n  SELECT\n    COL1,\n    COL2,\n    COL3,\n    COL5,\n    COL7\n  FROM CTE_FILTER AS A\n  LEFT JOIN CTE_SOURCE_3 AS B\n    ON COL6 = COL1\n)\nSELECT\n  COL1,\n  COL2,\n  COL3,\n  COL4\nFROM CTE_FILTER",
+    "cte_column": [
+      {
+        "column_name": "COL1",
+        "dependencies": [
+          {
+            "cte_name": "CTE_GROUP",
+            "column_name": "COL1"
+          }
+        ]
+      },
+      {
+        "column_name": "COL2",
+        "dependencies": [
+          {
+            "cte_name": "CTE_JOIN",
+            "column_name": "COL2"
+          }
+        ]
+      },
+      {
+        "column_name": "COL3",
+        "dependencies": [
+          {
+            "cte_name": "CTE_JOIN",
+            "column_name": "COL3"
+          }
+        ]
+      },
+      {
+        "column_name": "COL4",
+        "dependencies": [
+          {
+            "cte_name": "CTE_SOURCE_2",
+            "column_name": "COL4"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,107 @@
+<div id="cy" style="width: 100%; height: 600px; border:1px solid #ccc; position:relative;"></div>
+<canvas id="overlay" style="position:absolute; top:0; left:0; pointer-events:none;"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.20.0/cytoscape.min.js"></script>
+<script>
+var data = {
+  nodes: [
+    { data: { id: 'CTE1', label: 'CTE1' } },
+    { data: { id: 'CTE2', label: 'CTE2' } }
+  ],
+  edges: [
+    { data: { source: 'CTE1', target: 'CTE2' } }
+  ],
+  columns: {
+    'CTE1': ['COL1','COL2','COL3'],
+    'CTE2': ['COL1','COL4']
+  },
+  colLinks: [
+    { from: 'CTE1.COL1', to: 'CTE2.COL1' }
+  ]
+};
+
+var cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: data.nodes.concat(data.edges),
+  style: [
+    { selector: 'node', style: { 'shape':'round-rectangle','background-color':'#0074D9','label':'data(label)','width':200,'height':60,'color':'#fff','text-valign':'top' } },
+    { selector: 'edge', style: { 'line-color':'#aaa','target-arrow-color':'#aaa','target-arrow-shape':'triangle' } }
+  ],
+  layout: { name: 'breadthfirst' }
+});
+
+var expanded = {};
+var canvas = document.getElementById('overlay');
+var ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = cy.container().clientWidth;
+  canvas.height = cy.container().clientHeight;
+}
+resizeCanvas();
+
+function drawOverlay() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = '#555';
+  ctx.fillStyle = '#fff';
+  ctx.font = "11px Arial";
+
+  cy.nodes().forEach(function(node){
+    var id = node.id();
+    if(!expanded[id]) return;
+    var pos = node.renderedPosition();
+    var width = node.renderedWidth();
+    var height = node.renderedHeight();
+
+    var cols = data.columns[id];
+    if(!cols) return;
+
+    // expand box
+    var boxH = 30 + cols.length * 18;
+    ctx.strokeRect(pos.x - width/2, pos.y - boxH/2, width, boxH);
+
+    cols.forEach((col,i)=>{
+      var y = pos.y - boxH/2 + 25 + i*18;
+      ctx.fillStyle = '#2ECC40';
+      ctx.fillRect(pos.x - width/2 + 5, y-12, width-10, 16);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(col, pos.x - width/2 + 10, y);
+    });
+  });
+
+  // draw column→column links
+  data.colLinks.forEach(function(link){
+    var [srcCte, srcCol] = link.from.split('.');
+    var [tgtCte, tgtCol] = link.to.split('.');
+    if(!(expanded[srcCte] && expanded[tgtCte])) return;
+
+    var srcNode = cy.getElementById(srcCte);
+    var tgtNode = cy.getElementById(tgtCte);
+    var srcCols = data.columns[srcCte];
+    var tgtCols = data.columns[tgtCte];
+    var sIdx = srcCols.indexOf(srcCol);
+    var tIdx = tgtCols.indexOf(tgtCol);
+    if(sIdx<0 || tIdx<0) return;
+
+    var sPos = srcNode.renderedPosition();
+    var tPos = tgtNode.renderedPosition();
+    var sY = sPos.y - (30 + srcCols.length *18)/2 + 25 + sIdx*18;
+    var tY = tPos.y - (30 + tgtCols.length *18)/2 + 25 + tIdx*18;
+
+    ctx.strokeStyle = '#ff0';
+    ctx.beginPath();
+    ctx.moveTo(sPos.x + 100, sY); // saída lateral direita
+    ctx.lineTo(tPos.x - 100, tY); // entrada lateral esquerda
+    ctx.stroke();
+  });
+}
+
+cy.on('render', drawOverlay);
+
+// clique para expandir/colapsar
+cy.on('tap','node',function(evt){
+  var id = evt.target.id();
+  expanded[id] = !expanded[id];
+  drawOverlay();
+});
+</script>
